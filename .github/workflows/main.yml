@@ -34,19 +34,19 @@ on:
       LOCAL_MANIFEST:
         description: "Personal local manifest [repository or raw]:"
         required: true
-        default: 'https://github.com/sounddrill31/local_manifests'
+        default: 'https://github.com/who-em-i/manifest'
       LOCAL_MANIFEST_BRANCH:
         description: "Personal local manifest's branch:"
         required: false
-        default: 'lineage-oxygen'
+        default: 'lineage'
       DEVICE_NAME:
         description: "Device's codename:"
         required: true
-        default: "oxygen"
+        default: "lavender"
       PRODUCT_NAME:
         description: "Product to build:"
         required: true
-        default: "lineage_oxygen"
+        default: "lineage_lavender"
       BUILD_COMMAND:
         description: 'Command to be used for compiling:'
         required: true
@@ -56,16 +56,16 @@ on:
         required: true
         default: 'userdebug'
         type: choice
-        options: 
+        options:
         - 'eng'
         - 'userdebug'
-        - 'user' 
+        - 'user'
       CLEAN_BUILD:
         description: 'Build with a clean workspace?'
         required: true
         default: 'no'
         type: choice
-        options: 
+        options:
         - 'yes'
         - 'no'
 
@@ -164,7 +164,7 @@ jobs:
           echo "Repo already installed."
         fi
       continue-on-error: true
-      
+
       # Generate 'git' credential in base of the workflow's author.
     - name: Set-up 'git' credential(s)
       run: |
@@ -177,19 +177,19 @@ jobs:
       run: |
         rm -rf tester
         mkdir tester
-        cd tester 
+        cd tester
         if [ "${{ github.event.inputs.BUILD_DIFFERENT_ROM }}" == "echo 'Build Starting!'" ]; then
           $REPO_INIT
         else
           ${{ github.event.inputs.BUILD_DIFFERENT_ROM }}
-        fi 
+        fi
         git clone ${{ github.event.inputs.LOCAL_MANIFEST }} --depth 1 -b ${{ github.event.inputs.LOCAL_MANIFEST_BRANCH }} .repo/local_manifests && \
 
         if [ ! $? == 0 ]; then \
           curl -o .repo/local_manifests ${{ github.event.inputs.LOCAL_MANIFEST }}; \
-          echo "Git clone failed, downloading through curl instead..."; \ 
+          echo "Git clone failed, downloading through curl instead..."; \
         fi \
-    
+
         timeout 1m repo sync --force-sync || { exit_code=$?; [ $exit_code -eq 124 ] || (echo "Error: Process failed with exit code $exit_code"; exit $exit_code); }
         du -csh . # Output Size when done
         rm -rf .repo
@@ -201,7 +201,7 @@ jobs:
 
   build:
     name: Build using foss.crave.io
-    needs: test 
+    needs: test
       # Change this to self-hosted after setting up devspace as github actions runner
     runs-on: ubuntu-latest
     concurrency:
@@ -233,7 +233,7 @@ jobs:
         fi
         if grep -q "$PROJECTFOLDER" <(crave clone list --json | jq -r '.clones[]."Cloned At"') && [ "${DCDEVSPACE}" == "1" ]; then
           crave clone destroy -y $PROJECTFOLDER || echo "Error removing $PROJECTFOLDER"
-        else          
+        else
         rm -rf $PROJECTFOLDER || true
         fi
 
@@ -273,7 +273,7 @@ jobs:
           echo "Repo already installed."
         fi
       continue-on-error: true
-      
+
       # Generate 'git' credential in base of the workflow's author.
     - name: Set-up 'git' credential(s)
       run: |
@@ -365,6 +365,7 @@ jobs:
 
         # Build the ROM
         lunch ${{ github.event.inputs.PRODUCT_NAME }}-${{ github.event.inputs.BUILD_TYPE }} && \
+        export SELINUX_IGNORE_NEVERALLOWS=true && \
         make installclean && \
         ${{ github.event.inputs.BUILD_COMMAND }}"
 
